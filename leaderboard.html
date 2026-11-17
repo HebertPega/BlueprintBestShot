@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blueprint Leaderboard</title>
+  <style>
+    /* Built for a 16:9 booth screen. Everything scales with the screen size:
+       1rem = 1% of the screen width (capped by height so nothing spills). */
+    :root {
+      --bg: #ffffff;
+      --panel: #f4f6ff;
+      --text: #0f172a;
+      --muted: #55627a;
+      --accent: #0046c7;
+      --robot: #7b87fb;
+      --robot-soft: #e6e9ff;
+      --flag: #fba333;
+      --flag-text: #3a2200;
+      --green: #2f9e6a;
+      --green-soft: #e3f4e9;
+      --gold: #f6b324;
+      --silver: #a9b4c7;
+      --bronze: #d48a4f;
+      --border: #dfe4f1;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: min(1vw, 1.778vh); }
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.25;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .screen {
+      width: 100rem;
+      height: 56.25rem;
+      display: grid;
+      grid-template-columns: 34rem 1fr;
+      gap: 3rem;
+      padding: 2.6rem 3rem;
+    }
+
+    /* ---------- Left: brand, art, QR ---------- */
+    .side {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .logo { height: 2rem; width: auto; max-width: 100%; display: block; align-self: flex-start; object-fit: contain; object-position: left center; }
+    .logo-fallback { font-size: 1.8rem; font-weight: 800; }
+    .eyebrow {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 2.4rem;
+      background: var(--flag);
+      color: var(--flag-text);
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.5rem 1.1rem;
+      border-radius: 99rem;
+    }
+    .live-dot {
+      width: 0.7rem; height: 0.7rem; border-radius: 50%;
+      background: #c62828;
+      box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.6);
+      animation: pulse 1.8s ease-out infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.55); }
+      100% { box-shadow: 0 0 0 0.8rem rgba(198, 40, 40, 0); }
+    }
+    .side h1 {
+      margin: 1.1rem 0 0;
+      font-size: 3.6rem;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+    }
+    .side h1 span { color: var(--accent); }
+    .art {
+      flex: 1;
+      min-height: 0;
+      margin: 1rem -1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .art-frame {
+      height: 100%;
+      max-width: 100%;
+      aspect-ratio: 1.175;
+      overflow: hidden;
+    }
+    .art-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: 50% 55%;
+      display: block;
+    }
+    .join {
+      display: flex;
+      align-items: center;
+      gap: 1.6rem;
+      background: var(--panel);
+      border-radius: 1.4rem;
+      padding: 1.3rem;
+    }
+    .qr {
+      width: 10.5rem; height: 10.5rem;
+      flex: 0 0 auto;
+      border-radius: 0.9rem;
+      background: #fff;
+      padding: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qr img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .qr.empty {
+      border: 0.15rem dashed var(--silver);
+      color: var(--muted);
+      font-size: 1rem;
+      text-align: center;
+    }
+    .join h2 { margin: 0 0 0.3rem; font-size: 1.7rem; letter-spacing: -0.01em; }
+    .join p { margin: 0; font-size: 1.15rem; color: var(--muted); }
+
+    /* ---------- Right: the board ---------- */
+    .board {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .board-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+    .board-head h2 {
+      margin: 0;
+      font-size: 2.4rem;
+      letter-spacing: -0.02em;
+    }
+    .stats { display: flex; gap: 1rem; }
+    .stat {
+      background: var(--panel);
+      border-radius: 1rem;
+      padding: 0.7rem 1.2rem;
+      text-align: right;
+    }
+    .stat b { display: block; font-size: 2rem; line-height: 1; }
+    .stat small { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+
+    /* Podium: 2nd, 1st, 3rd */
+    .podium {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      align-items: end;
+      gap: 1.4rem;
+      margin-top: 2rem;
+    }
+    .place {
+      position: relative;
+      border-radius: 1.6rem;
+      padding: 1.6rem 1.4rem 1.4rem;
+      text-align: center;
+      background: var(--panel);
+      min-width: 0;
+    }
+    .place.first { background: var(--robot-soft); padding-top: 2.2rem; }
+    .place .medal {
+      width: 3.6rem; height: 3.6rem;
+      margin: 0 auto 0.9rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; font-weight: 800;
+      color: #fff;
+      /* dimples, like a golf ball */
+      background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.45) 0 0.2rem, transparent 0.25rem),
+                        radial-gradient(circle at 65% 40%, rgba(255,255,255,0.35) 0 0.18rem, transparent 0.22rem);
+    }
+    .first .medal { width: 4.6rem; height: 4.6rem; font-size: 2.2rem; background-color: var(--gold); }
+    .second .medal { background-color: var(--silver); }
+    .third .medal { background-color: var(--bronze); }
+    .place .name {
+      font-size: 1.9rem;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .first .name { font-size: 2.3rem; }
+    .place .score {
+      margin-top: 0.6rem;
+      font-size: 3.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .first .score { font-size: 4.4rem; }
+    .place .unit { font-size: 1.05rem; color: var(--muted); font-weight: 600; margin-top: 0.3rem; }
+    .place.vacant .name, .place.vacant .score { color: var(--silver); }
+
+    /* Places 4 onward, two columns */
+    .rest {
+      flex: 1;
+      min-height: 0;
+      margin-top: 1.8rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: 4.1rem;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(4, 4.1rem);
+      column-gap: 1.6rem;
+      row-gap: 0.7rem;
+      align-content: start;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 3rem 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.3rem;
+      border: 0.12rem solid var(--border);
+      border-radius: 1rem;
+      min-width: 0;
+    }
+    .row .rank { font-size: 1.4rem; font-weight: 800; color: var(--muted); }
+    .row .name { font-size: 1.55rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .score { font-size: 1.8rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    .is-new { animation: arrive 2.4s ease-out; }
+    @keyframes arrive {
+      0% { background-color: var(--green-soft); transform: scale(1.04); }
+      30% { background-color: var(--green-soft); transform: scale(1); }
+      100% { background-color: transparent; }
+    }
+    .place.is-new { animation-name: arrive-place; }
+    @keyframes arrive-place {
+      0% { box-shadow: 0 0 0 0.4rem var(--green); transform: translateY(-0.4rem); }
+      100% { box-shadow: 0 0 0 0 transparent; transform: none; }
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      grid-row: 1 / -1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; color: var(--muted);
+      border: 0.15rem dashed var(--border);
+      border-radius: 1.2rem;
+    }
+
+    .board-foot {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 1rem;
+    }
+    .board-foot .warn { color: #b3261e; font-weight: 600; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .live-dot, .is-new { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+
+    <aside class="side">
+      <img class="logo" src="pega-logo.svg" alt="Pega"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-fallback',textContent:'Pega'}))">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Live leaderboard</span>
+      <h1>Top Shots at <span>Blueprint</span></h1>
+
+      <div class="art">
+        <div class="art-frame">
+          <img src="golf-robot.png" alt="A friendly blue robot swinging a golf club toward a flag"
+               onerror="this.parentElement.style.display='none'">
+        </div>
+      </div>
+
+      <div class="join">
+        <!-- Put your QR code image in the repo as qr-code.png -->
+        <div class="qr" id="qr">
+          <img src="qr-code.png" alt="QR code to post your score"
+               onerror="this.parentElement.classList.add('empty'); this.parentElement.textContent='QR code';">
+        </div>
+        <div>
+          <h2>Think you can beat them?</h2>
+          <p>Take your shot, then scan to post your score and enter the prize draw.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="board">
+      <div class="board-head">
+        <h2>Today's Top Golfers</h2>
+        <div class="stats">
+          <div class="stat"><b id="statPlayers">–</b><small>golfers</small></div>
+          <div class="stat"><b id="statTop">–</b><small>best score</small></div>
+        </div>
+      </div>
+
+      <div class="podium" id="podium"></div>
+      <div class="rest" id="rest"></div>
+
+      <div class="board-foot">
+        <span>Ties go to whoever posted first. Each golfer's best score counts.</span>
+        <span id="updated">Loading scores…</span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ---- Settings ----
+    // Same Google Apps Script URL your signup page posts to (needs the doGet function).
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEG0KuqqlvFn0IafnvJmgMw33cY8ztlzp0BTKjWIx4BizVpwnOJ3oUGNCY7O0EWrnN/exec';
+    const REFRESH_SECONDS = 15;
+    // false shows "Sarah H."; true shows full names on screen.
+    const SHOW_FULL_NAMES = false;
+    // Add ?demo to the page address to preview with sample data.
+    const DEMO = new URLSearchParams(location.search).has('demo');
+
+    const podiumEl = document.getElementById('podium');
+    const restEl = document.getElementById('rest');
+    const updatedEl = document.getElementById('updated');
+    const statPlayers = document.getElementById('statPlayers');
+    const statTop = document.getElementById('statTop');
+    let seen = null; // names already on the board, to highlight new arrivals
+
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function displayName(full) {
+      const parts = String(full).trim().split(/\s+/);
+      if (SHOW_FULL_NAMES || parts.length < 2) return parts.join(' ');
+      return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
+    }
+
+    function render(players, total) {
+      const keyOf = (p) => p.name.toLowerCase();
+      const isNew = (p) => seen && !seen.has(keyOf(p));
+
+      // Podium in 2-1-3 order
+      const slots = [
+        { p: players[1], cls: 'second', n: 2 },
+        { p: players[0], cls: 'first', n: 1 },
+        { p: players[2], cls: 'third', n: 3 },
+      ];
+      podiumEl.innerHTML = slots.map(({ p, cls, n }) => {
+        if (!p) {
+          return `<div class="place ${cls} vacant"><div class="medal">${n}</div>
+                    <div class="name">Open spot</div><div class="score">–</div>
+                    <div class="unit">shots sunk</div></div>`;
+        }
+        return `<div class="place ${cls}${isNew(p) ? ' is-new' : ''}">
+                  <div class="medal">${n}</div>
+                  <div class="name">${escapeHtml(displayName(p.name))}</div>
+                  <div class="score">${escapeHtml(p.display)}</div>
+                  <div class="unit">shots sunk</div>
+                </div>`;
+      }).join('');
+
+      const rest = players.slice(3, 11);
+      if (!players.length) {
+        restEl.innerHTML = `<div class="empty-state">No scores yet. Be the first on the board!</div>`;
+      } else {
+        restEl.innerHTML = rest.map((p, i) => `
+          <div class="row${isNew(p) ? ' is-new' : ''}">
+            <span class="rank">${i + 4}</span>
+            <span class="name">${escapeHtml(displayName(p.name))}</span>
+            <span class="score">${escapeHtml(p.display)}</span>
+          </div>`).join('');
+      }
+
+      statPlayers.textContent = total ?? players.length;
+      statTop.textContent = players[0] ? players[0].display : '–';
+      seen = new Set(players.map(keyOf));
+    }
+
+    function sampleData() {
+      const names = ['Jordan Lee', 'Priya Natarajan', 'Marcus Webb', 'Elena Rossi', 'Sam Okafor',
+        'Chris Park', 'Taylor Brooks', 'Ana Silva', 'Dev Patel', 'Morgan Price', 'Riley Chen'];
+      const scores = [5, 5, 4, 4, 3, 3, 3, 2, 2, 1, 1];
+      return names.map((n, i) => ({ name: n, score: scores[i], display: scores[i] === 5 ? '5+' : String(scores[i]) }));
+    }
+
+    async function load() {
+      if (DEMO) {
+        const data = sampleData();
+        render(data, 37);
+        updatedEl.textContent = 'Demo data';
+        return;
+      }
+      try {
+        const res = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
+        const data = await res.json();
+        if (data.result !== 'success') throw new Error(data.error || 'Bad response');
+        render(data.players || [], data.total);
+        const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        updatedEl.textContent = `Updated ${now} · refreshes every ${REFRESH_SECONDS}s`;
+        updatedEl.classList.remove('warn');
+      } catch (err) {
+        // Keep the last good board on screen and try again next cycle
+        updatedEl.textContent = 'Reconnecting…';
+        updatedEl.classList.add('warn');
+        if (seen === null) render([], 0);
+      }
+    }
+
+    load();
+    setInterval(load, REFRESH_SECONDS * 1000);
+  </script>
+</body>
+</html>
