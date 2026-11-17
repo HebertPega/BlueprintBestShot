@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Blueprint Hole-in-One Challenge</title>
+  <style>
+    :root {
+      --bg: #eef2ff;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0046c7;
+      --accent-hover: #0037a3;
+      --accent-soft: #e0e7ff;
+      --flag: #fba333;
+      --border: #cbd5e1;
+      --error: #dc2626;
+      /* Hero stays light in both modes so it matches the illustration's white background */
+      --hero-bg: #ffffff;
+      --hero-text: #0f172a;
+      --hero-muted: #475569;
+      --hero-accent: #0046c7;
+      /* Shared width for the illustration and the logo bar.
+         Capped by screen width, a 960px max, and the space left under the title. */
+      --stage: min(960px, calc(100vw - 32px), max(420px, calc((100svh - 430px) * 1.175)));
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120;
+        --card: #151e33;
+        --text: #f8fafc;
+        --muted: #a3b0c6;
+        --accent: #8b95ff;
+        --accent-hover: #a9b0ff;
+        --accent-soft: #232c4d;
+        --border: #2c3a57;
+        --error: #f87171;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    /* ---------- Full-screen hero ---------- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      background: var(--hero-bg);
+      color: var(--hero-text);
+      overflow: hidden;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: var(--stage);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 0 0;
+      position: relative;
+      z-index: 2;
+    }
+    .logo { height: 28px; width: auto; display: block; }
+    .topbar strong { font-size: 1.2rem; }
+    .topbar a {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--hero-accent);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .topbar a:hover { text-decoration: underline; }
+
+    .hero-text {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 24px 0 0;
+      width: var(--stage); /* same width as the illustration and logo bar */
+      margin: 0 auto;
+    }
+    .eyebrow {
+      display: inline-block;
+      background: var(--flag);
+      color: #3a2200;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, calc(var(--stage) / 22.5), 3.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    .hero h1 span { color: var(--hero-accent); }
+    .hero .lede {
+      margin: 12px auto 0;
+      max-width: 46ch;
+      color: var(--hero-muted);
+      font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+    }
+
+    /* Illustration sits under the title at the shared stage width */
+    .hero-art {
+      flex: 1 0 auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 4px 0 100px; /* tight under the text, room for the pinned button */
+    }
+    .art-frame {
+      width: var(--stage);
+      aspect-ratio: 1.175; /* trims the illustration's empty sky and margin */
+      overflow: hidden;
+    }
+    .art-frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 55%;
+    }
+
+    /* Pinned to the bottom of the screen; hides once the form is in view */
+    .scroll-cta {
+      position: fixed;
+      z-index: 10;
+      left: 50%;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px)); /* clears the iPhone home bar */
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: var(--hero-accent);
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 12px 28px -8px rgba(0, 70, 199, 0.6);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .scroll-cta:hover { background: #0037a3; }
+    .scroll-cta.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 20px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-cta { transition: none; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* ---------- Form section ---------- */
+    .entry {
+      padding: 36px 16px 48px;
+      display: flex;
+      justify-content: center;
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 26px 30px;
+      box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.25);
+    }
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 1.4rem;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+    .card .sub {
+      margin: 0 0 22px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .form-group { margin-bottom: 18px; }
+    label, legend {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      padding: 0;
+    }
+    input[type="text"], input[type="email"] {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 1rem; /* 16px prevents iOS zoom on focus */
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    input[type="text"]:focus, input[type="email"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    fieldset { border: 0; margin: 0 0 8px; padding: 0; min-width: 0; }
+    .hint { font-size: 0.8rem; color: var(--muted); margin: -2px 0 10px; }
+    .scorecard {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    .scorecard input { position: absolute; opacity: 0; pointer-events: none; }
+    .scorecard label {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+    .scorecard label:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .scorecard input:checked + label {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px -6px var(--accent);
+    }
+    @media (prefers-color-scheme: dark) {
+      .scorecard input:checked + label { color: #0b1120; }
+    }
+    .scorecard input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    button {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: background-color 0.15s ease;
+    }
+    @media (prefers-color-scheme: dark) { button { color: #0b1120; } }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .fine { margin: 12px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; }
+    .hp { position: absolute; left: -9999px; }
+
+    .status { margin-top: 16px; font-weight: 600; text-align: center; min-height: 1.2em; }
+    .status.error { color: var(--error); }
+
+    .success { display: none; text-align: center; padding: 4px 0 6px; }
+    .success.show { display: block; animation: pop 0.35s ease-out; }
+    .success .flag { font-size: 2.6rem; line-height: 1; }
+    .success h2 { margin: 10px 0 6px; }
+    .success p { margin: 0 0 20px; color: var(--muted); }
+    .cta {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .cta:hover { text-decoration: underline; }
+    @keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    footer {
+      padding: 0 16px max(28px, env(safe-area-inset-bottom));
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 400px) {
+      .card { padding: 24px 18px 26px; }
+      .scorecard { gap: 6px; }
+      .scorecard label { font-size: 1rem; }
+      .hero-text { padding-top: 22px; }
+    }
+    /* Short landscape phones: let the hero grow instead of squashing the art */
+    @media (max-height: 500px) and (orientation: landscape) {
+      :root { --stage: min(720px, calc(100vw - 32px)); }
+      .hero { height: auto; min-height: 100svh; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="topbar">
+      <!-- Place Pega's official logo file in the repo as pega-logo.svg -->
+      <img class="logo" src="pega-logo.svg" alt="Pega" onerror="this.replaceWith(Object.assign(document.createElement('strong'),{textContent:'Pega'}))">
+      <a href="https://www.pega.com/blueprint" target="_blank" rel="noopener">Explore Blueprint →</a>
+    </div>
+
+    <div class="hero-text">
+      <span class="eyebrow">On the green</span>
+      <h1>Take Your Best Shot at <span>Blueprint</span></h1>
+      <p class="lede">Sink as many shots as you can, then see how fast Blueprint reimagines your workflows with AI.</p>
+    </div>
+
+    <div class="hero-art">
+      <!-- Upload the robot golfer illustration to the repo as golf-robot.png -->
+      <div class="art-frame">
+        <img src="golf-robot.png" alt="A friendly blue robot swinging a golf club toward a flag on the green" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    </header>
+
+  <a class="scroll-cta" id="scrollCta" href="#enter">Enter Your Score ↓</a>
+
+  <section class="entry" id="enter">
+    <div class="card">
+      <div id="formWrap">
+        <h2>Post Your Score</h2>
+        <p class="sub">Enter the prize draw in under a minute.</p>
+
+        <!-- Connected to your live deployed Google Apps Script Web App -->
+        <form id="signup" action="https://script.google.com/macros/s/AKfycbwEG0KuqqlvFn0IafnvJmgMw33cY8ztlzp0BTKjWIx4BizVpwnOJ3oUGNCY7O0EWrnN/exec" method="POST">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="Name" placeholder="Your name" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Work Email</label>
+            <input type="email" id="email" name="Email" placeholder="you@company.com" required autocomplete="email">
+          </div>
+
+          <!-- Field name kept as "Putts" so your Google Sheet column keeps working -->
+          <fieldset>
+            <legend>Your Scorecard</legend>
+            <p class="hint">How many did you sink?</p>
+            <div class="scorecard">
+              <input type="radio" name="Putts" id="s0" value="0" required><label for="s0">0</label>
+              <input type="radio" name="Putts" id="s1" value="1"><label for="s1">1</label>
+              <input type="radio" name="Putts" id="s2" value="2"><label for="s2">2</label>
+              <input type="radio" name="Putts" id="s3" value="3"><label for="s3">3</label>
+              <input type="radio" name="Putts" id="s4" value="4"><label for="s4">4</label>
+              <input type="radio" name="Putts" id="s5" value="5+"><label for="s5">5+</label>
+            </div>
+          </fieldset>
+
+          <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+          <button type="submit" id="submit">Post My Score &amp; Enter the Prize Draw</button>
+          <p class="fine">We'll use your email to share Blueprint updates.</p>
+        </form>
+      </div>
+
+      <div id="success" class="success" role="status" aria-live="polite">
+        <div class="flag" aria-hidden="true">⛳</div>
+        <h2 id="successTitle">Nice shot!</h2>
+        <p>Your score is on the board and you're entered in the prize draw. Good luck!</p>
+        <a class="cta" href="https://www.pega.com/blueprint" target="_blank" rel="noopener">Now see what Blueprint can do →</a>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <footer>
+    Powered by <a href="https://www.pega.com/blueprint" target="_blank" rel="noopener">Pega Blueprint</a>
+  </footer>
+
+  <script>
+    const form = document.getElementById('signup');
+    const status = document.getElementById('status');
+    const button = document.getElementById('submit');
+    const formWrap = document.getElementById('formWrap');
+    const success = document.getElementById('success');
+    const successTitle = document.getElementById('successTitle');
+    const buttonLabel = button.textContent;
+
+    // Hide the pinned button while the form is on screen
+    const cta = document.getElementById('scrollCta');
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([entry]) => {
+        cta.classList.toggle('is-hidden', entry.isIntersecting);
+      }, { threshold: 0.15 }).observe(document.getElementById('enter'));
+    }
+
+    const cheers = {
+      '0': 'Thanks for stepping up!',
+      '1': 'On the board!',
+      '2': 'Nice shot!',
+      '3': 'Great swing!',
+      '4': 'Impressive!',
+      '5+': 'Hole-in-one territory!'
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = '';
+      status.className = 'status';
+      button.disabled = true;
+      button.textContent = 'Posting your score…';
+
+      try {
+        const formData = new FormData(form);
+        const score = formData.get('Putts');
+        const firstName = (formData.get('Name') || '').trim().split(/\s+/)[0];
+
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new URLSearchParams(formData),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        const data = await res.json();
+
+        if (res.ok && data.result === 'success') {
+          form.reset();
+          formWrap.style.display = 'none';
+          const cheer = cheers[score] || 'Nice shot!';
+          successTitle.textContent = firstName ? `${cheer} Well played, ${firstName}.` : cheer;
+          success.classList.add('show');
+          success.scrollIntoView({ block: 'center' });
+        } else {
+          throw new Error(data.error || 'Request failed');
+        }
+      } catch (err) {
+        status.textContent = 'Something went wrong. Please try again.';
+        status.classList.add('error');
+      } finally {
+        button.disabled = false;
+        button.textContent = buttonLabel;
+      }
+    });
+  </script>
+</body>
+</html>
